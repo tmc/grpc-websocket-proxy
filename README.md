@@ -3,6 +3,8 @@ grpc-websocket-proxy
 
 [![GoDoc](https://godoc.org/github.com/tmc/grpc-websocket-proxy/wsproxy?status.svg)](http://godoc.org/github.com/tmc/grpc-websocket-proxy/wsproxy)
 
+Wrap your grpc-gateway mux with this helper to expose streaming endpoints over websockets.
+
 Usage:
 ```diff
 	mux := runtime.NewServeMux()
