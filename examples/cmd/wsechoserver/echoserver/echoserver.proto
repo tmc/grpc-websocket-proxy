@@ -11,13 +11,24 @@ message EchoResponse {
   string Message = 1;
 }
 
-message Void {}
+message Heartbeat {
+  enum Status {
+    UNKNOWN = 0;
+    OK = 1;
+  }
+  Status status = 1;
+}
+
+message Empty {}
 
 service EchoService {
   rpc Echo(stream EchoRequest) returns (stream EchoResponse) {
     option (google.api.http) = {post: "/echo", body: "*"};
   }
-  rpc Stream(Void) returns (stream EchoResponse) {
+  rpc Stream(Empty) returns (stream EchoResponse) {
     option (google.api.http) = {get: "/echo"};
+  }
+  rpc Heartbeats(stream Empty) returns (stream Heartbeat) {
+    option (google.api.http) = {post: "/heartbeats"};
   }
 }
