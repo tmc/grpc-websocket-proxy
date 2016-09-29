@@ -4,11 +4,11 @@ package echoserver;
 import "google/api/annotations.proto";
 
 message EchoRequest {
-  string Message = 1;
+  string message = 1;
 }
 
 message EchoResponse {
-  string Message = 1;
+  string message = 1;
 }
 
 message Heartbeat {

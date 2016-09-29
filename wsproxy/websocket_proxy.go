@@ -2,23 +2,25 @@ package wsproxy
 
 import (
 	"bufio"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"net/http/httputil"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 )
 
-var MethodOverrideParam = "method"
+var (
+	MethodOverrideParam = "method"
+	TokenCookieName     = "token"
+)
 
 // WebsocketProxy attempts to expose the underlying handler as a bidi websocket stream with newline-delimited
 // JSON as the content encoding.
 //
-// The HTTP Authorization header is populated from the Sec-Websocket-Protocol field
+// The HTTP Authorization header is either populated from the Sec-Websocket-Protocol field or by a cookie.
+// The cookie name is specified by the TokenCookieName value.
 //
 // example:
 //   Sec-Websocket-Protocol: Bearer, foobar
@@ -43,10 +45,14 @@ var upgrader = websocket.Upgrader{
 }
 
 func websocketProxy(w http.ResponseWriter, r *http.Request, h http.Handler) {
-	req, err := httputil.DumpRequest(r, true)
-	fmt.Println(err)
-	fmt.Println(string(req))
-	conn, err := upgrader.Upgrade(w, r, nil)
+	var responseHeader http.Header
+	// If Sec-WebSocket-Protocol starts with "Bearer", respond in kind.
+	if strings.HasPrefix(r.Header.Get("Sec-WebSocket-Protocol"), "Bearer") {
+		responseHeader = http.Header{
+			"Sec-WebSocket-Protocol": []string{"Bearer"},
+		}
+	}
+	conn, err := upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
 		log.Println("error upgrading websocket:", err)
 		return
@@ -64,6 +70,10 @@ func websocketProxy(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	}
 	if swsp := r.Header.Get("Sec-WebSocket-Protocol"); swsp != "" {
 		request.Header.Set("Authorization", strings.Replace(swsp, "Bearer, ", "Bearer ", 1))
+	}
+	// If token cookie is present, populate Authorization header from the cookie instead.
+	if cookie, err := r.Cookie(TokenCookieName); err == nil {
+		request.Header.Set("Authorization", "Bearer "+cookie.Value)
 	}
 	if m := r.URL.Query().Get(MethodOverrideParam); m != "" {
 		request.Method = m
@@ -104,9 +114,8 @@ func websocketProxy(w http.ResponseWriter, r *http.Request, h http.Handler) {
 			log.Println("[read] read payload:", string(p))
 			log.Println("[read] writing to requestBody:")
 			n, err := requestBodyW.Write(p)
-			log.Println("[read] wrote to requestBody", n)
 			requestBodyW.Write([]byte("\n"))
-			log.Println("[read] wrote newline to requestBody")
+			log.Println("[read] wrote to requestBody", n)
 			if err != nil {
 				log.Println("[read] error writing message to upstream http server:", err)
 				return

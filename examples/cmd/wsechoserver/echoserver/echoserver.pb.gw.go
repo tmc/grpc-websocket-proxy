@@ -38,6 +38,9 @@ func request_EchoService_Echo_0(ctx context.Context, marshaler runtime.Marshaler
 	handleSend := func() error {
 		var protoReq EchoRequest
 		err = dec.Decode(&protoReq)
+		if err == io.EOF {
+			return err
+		}
 		if err != nil {
 			grpclog.Printf("Failed to decode request: %v", err)
 			return err
@@ -101,6 +104,9 @@ func request_EchoService_Heartbeats_0(ctx context.Context, marshaler runtime.Mar
 	handleSend := func() error {
 		var protoReq Empty
 		err = dec.Decode(&protoReq)
+		if err == io.EOF {
+			return err
+		}
 		if err != nil {
 			grpclog.Printf("Failed to decode request: %v", err)
 			return err
