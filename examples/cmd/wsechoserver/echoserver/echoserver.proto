@@ -2,6 +2,7 @@ syntax = "proto3";
 package echoserver;
 
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 
 message EchoRequest {
   string message = 1;
@@ -9,6 +10,7 @@ message EchoRequest {
 
 message EchoResponse {
   string message = 1;
+  google.protobuf.Timestamp timestamp = 2;
 }
 
 message Heartbeat {

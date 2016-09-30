@@ -7,6 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/tmc/grpc-websocket-proxy/examples/cmd/wsechoserver/echoserver"
 )
 
@@ -31,8 +32,13 @@ func (s *Server) Echo(srv echoserver.EchoService_EchoServer) error {
 		if err != nil {
 			return err
 		}
+		now := time.Now()
 		if err := srv.Send(&echoserver.EchoResponse{
 			Message: req.Message + "!",
+			Timestamp: &timestamp.Timestamp{
+				Seconds: now.Unix(),
+				Nanos:   int32(now.Nanosecond()),
+			},
 		}); err != nil {
 			return err
 		}
