@@ -5,13 +5,21 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/net/context"
+
 	log "github.com/Sirupsen/logrus"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/tmc/grpc-websocket-proxy/examples/cmd/wsechoserver/echoserver"
 )
 
 type Server struct{}
+
+func (s *Server) UpdateMessage(ctx context.Context, m *echoserver.Message) (*echoserver.Message, error) {
+	spew.Dump(m)
+	return &echoserver.Message{}, nil
+}
 
 func (s *Server) Stream(_ *echoserver.Empty, stream echoserver.EchoService_StreamServer) error {
 	start := time.Now()

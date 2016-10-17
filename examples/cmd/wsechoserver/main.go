@@ -13,7 +13,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/tmc/grpc-websocket-proxy/examples/cmd/wsechoserver/echoserver"
-	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -35,13 +34,16 @@ func run() error {
 
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	err := echoserver.RegisterEchoServiceHandlerFromEndpoint(ctx, mux, *grpcAddr, opts)
-	if err != nil {
+	if err := echoserver.RegisterEchoServiceHandlerFromEndpoint(ctx, mux, *grpcAddr, opts); err != nil {
+		return err
+	}
+	if err := echoserver.RegisterMessagingHandlerFromEndpoint(ctx, mux, *grpcAddr, opts); err != nil {
 		return err
 	}
 	go http.ListenAndServe(*debugAddr, nil)
 	fmt.Println("listening")
-	http.ListenAndServe(*httpAddr, wsproxy.WebsocketProxy(mux))
+	http.ListenAndServe(*httpAddr, mux)
+	//http.ListenAndServe(*httpAddr, wsproxy.WebsocketProxy(mux))
 	return nil
 }
 
@@ -52,6 +54,8 @@ func listenGRPC(listenAddr string) error {
 	}
 	grpcServer := grpc.NewServer()
 	echoserver.RegisterEchoServiceServer(grpcServer, &Server{})
+	echoserver.RegisterMessagingServer(grpcServer, &Server{})
+
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Println("serveGRPC err:", err)

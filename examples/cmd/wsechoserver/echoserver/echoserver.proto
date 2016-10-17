@@ -34,3 +34,17 @@ service EchoService {
     option (google.api.http) = {post: "/heartbeats"};
   }
 }
+
+
+service Messaging {
+  rpc UpdateMessage(Message) returns (Message) {
+    option (google.api.http) = {
+      put: "/v1/messages/{message_id}"
+      body: "*"
+    };
+  }
+}
+message Message {
+  string message_id = 1;
+  string text = 2;
+}
