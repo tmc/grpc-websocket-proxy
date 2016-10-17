@@ -4,13 +4,33 @@ package echoserver;
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+// Disables some golang/protobuf behaviour
+option (gogoproto.goproto_stringer_all) = false;
+option (gogoproto.goproto_enum_stringer_all) = false;
+option (gogoproto.gostring_all) = false;
+
+// Enable gogo/protobuf features
+option (gogoproto.populate_all) = true;
+option (gogoproto.sizer_all) = true;
+option (gogoproto.stringer_all) =  true;
+option (gogoproto.equal_all) = true;
+option (gogoproto.verbose_equal_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.enum_stringer_all) = true;
+
 message EchoRequest {
   string message = 1;
 }
 
 message EchoResponse {
   string message = 1;
-  google.protobuf.Timestamp timestamp = 2;
+  google.protobuf.Timestamp timestamp = 2 [
+    (gogoproto.stdtime) = true,
+    (gogoproto.nullable) = false
+  ];
 }
 
 message Heartbeat {
