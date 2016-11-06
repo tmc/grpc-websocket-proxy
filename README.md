@@ -4,6 +4,8 @@
 
 Wrap your grpc-gateway mux with this helper to expose streaming endpoints over websockets.
 
+On the wire this uses newline-delimited json encoding of the messages.
+
 Usage:
 ```diff
 	mux := runtime.NewServeMux()
