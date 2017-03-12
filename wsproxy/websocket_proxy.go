@@ -54,7 +54,7 @@ func websocketProxy(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	}
 	conn, err := upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
-		log.Println("error upgrading websocket:", err)
+		log.Warnln("error upgrading websocket:", err)
 		return
 	}
 	defer conn.Close()
@@ -65,7 +65,7 @@ func websocketProxy(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	requestBodyR, requestBodyW := io.Pipe()
 	request, err := http.NewRequest(r.Method, r.URL.String(), requestBodyR)
 	if err != nil {
-		log.Println("error preparing request:", err)
+		log.Warnln("error preparing request:", err)
 		return
 	}
 	if swsp := r.Header.Get("Sec-WebSocket-Protocol"); swsp != "" {
@@ -82,7 +82,7 @@ func websocketProxy(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	responseBodyR, responseBodyW := io.Pipe()
 	go func() {
 		<-ctx.Done()
-		log.Println("closing pipes")
+		log.Debugln("closing pipes")
 		requestBodyW.CloseWithError(io.EOF)
 		responseBodyW.CloseWithError(io.EOF)
 	}()
@@ -101,23 +101,23 @@ func websocketProxy(w http.ResponseWriter, r *http.Request, h http.Handler) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("read loop done")
+				log.Debugln("read loop done")
 				return
 			default:
 			}
-			log.Println("[read] reading from socket.")
+			log.Debugln("[read] reading from socket.")
 			_, p, err := conn.ReadMessage()
 			if err != nil {
-				log.Println("error reading websocket message:", err)
+				log.Warnln("error reading websocket message:", err)
 				return
 			}
-			log.Println("[read] read payload:", string(p))
-			log.Println("[read] writing to requestBody:")
+			log.Debugln("[read] read payload:", string(p))
+			log.Debugln("[read] writing to requestBody:")
 			n, err := requestBodyW.Write(p)
 			requestBodyW.Write([]byte("\n"))
-			log.Println("[read] wrote to requestBody", n)
+			log.Debugln("[read] wrote to requestBody", n)
 			if err != nil {
-				log.Println("[read] error writing message to upstream http server:", err)
+				log.Warnln("[read] error writing message to upstream http server:", err)
 				return
 			}
 		}
@@ -126,17 +126,17 @@ func websocketProxy(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	scanner := bufio.NewScanner(responseBodyR)
 	for scanner.Scan() {
 		if len(scanner.Bytes()) == 0 {
-			log.Println("[write] empty scan", scanner.Err())
+			log.Warnln("[write] empty scan", scanner.Err())
 			continue
 		}
-		log.Println("[write] scanned", scanner.Text())
+		log.Debugln("[write] scanned", scanner.Text())
 		if err = conn.WriteMessage(websocket.TextMessage, scanner.Bytes()); err != nil {
-			log.Println("[write] error writing websocket message:", err)
+			log.Warnln("[write] error writing websocket message:", err)
 			return
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		log.Println("scanner err:", err)
+		log.Warnln("scanner err:", err)
 	}
 }
 
