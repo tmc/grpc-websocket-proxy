@@ -19,7 +19,7 @@ package echoserver
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import _ "github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api"
+import _ "google.golang.org/genproto/googleapis/api/annotations"
 
 import (
 	context "golang.org/x/net/context"
@@ -67,6 +67,13 @@ func (m *EchoRequest) String() string            { return proto.CompactTextStrin
 func (*EchoRequest) ProtoMessage()               {}
 func (*EchoRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *EchoRequest) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
 type EchoResponse struct {
 	Message string `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
 }
@@ -76,6 +83,13 @@ func (m *EchoResponse) String() string            { return proto.CompactTextStri
 func (*EchoResponse) ProtoMessage()               {}
 func (*EchoResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
+func (m *EchoResponse) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
 type Heartbeat struct {
 	Status Heartbeat_Status `protobuf:"varint,1,opt,name=status,enum=echoserver.Heartbeat_Status" json:"status,omitempty"`
 }
@@ -84,6 +98,13 @@ func (m *Heartbeat) Reset()                    { *m = Heartbeat{} }
 func (m *Heartbeat) String() string            { return proto.CompactTextString(m) }
 func (*Heartbeat) ProtoMessage()               {}
 func (*Heartbeat) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *Heartbeat) GetStatus() Heartbeat_Status {
+	if m != nil {
+		return m.Status
+	}
+	return Heartbeat_UNKNOWN
+}
 
 type Empty struct {
 }
@@ -107,7 +128,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion3
+const _ = grpc.SupportPackageIsVersion4
 
 // Client API for EchoService service
 
@@ -327,14 +348,14 @@ var _EchoService_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: fileDescriptor0,
+	Metadata: "echoserver.proto",
 }
 
 func init() { proto.RegisterFile("echoserver.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
 	// 300 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x91, 0xc1, 0x4a, 0xc3, 0x40,
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0xc1, 0x4a, 0xc3, 0x40,
 	0x10, 0x86, 0xdd, 0x62, 0x13, 0x3a, 0xb5, 0x12, 0x57, 0xc4, 0x50, 0x2a, 0xc8, 0x5e, 0x0c, 0x1e,
 	0x92, 0x52, 0x3d, 0x79, 0xaf, 0x08, 0x85, 0x04, 0x52, 0xc4, 0xab, 0xdb, 0x30, 0x24, 0x01, 0x93,
 	0x8d, 0xbb, 0xdb, 0x82, 0x57, 0x5f, 0xc1, 0x47, 0xf3, 0x15, 0x7c, 0x07, 0xaf, 0x92, 0xac, 0xc6,
