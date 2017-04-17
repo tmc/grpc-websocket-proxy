@@ -108,11 +108,10 @@ func websocketProxy(w http.ResponseWriter, r *http.Request, h http.Handler) {
 			log.Debugln("[read] reading from socket.")
 			_, p, err := conn.ReadMessage()
 			if err != nil {
-				if cErr, ok := err.(*websocket.CloseError); ok && cErr.Code == websocket.CloseNormalClosure {
-					log.Debugln("[read] websocket closed successfully")
+				if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+					log.Debugln("[read] websocket closed successfully:", err)
 					return
 				}
-
 				log.Warnln("error reading websocket message:", err)
 				return
 			}
