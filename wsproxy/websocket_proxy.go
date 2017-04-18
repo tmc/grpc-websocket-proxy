@@ -12,6 +12,8 @@ import (
 )
 
 // MethodOverrideParam defines the special URL parameter that is translated into the subsequent proxied streaming http request's method.
+//
+// Deprecated: it is preferable to use the Options parameters to WebSocketProxy to supply parameters.
 var MethodOverrideParam = "method"
 
 // TokenCookieName defines the cookie name that is translated to an 'Authorization: Bearer' header in the streaming http request's headers.
