@@ -19,8 +19,8 @@ var MethodOverrideParam = "method"
 // Deprecated: it is preferable to use the Options parameters to WebSocketProxy to supply parameters.
 var TokenCookieName = "token"
 
-// RequestMutatorFunc can modify a outgoing proxied request before it is made.
-type RequestMutatorFunc func(incoming *http.Request, outgoing *http.Request)
+// RequestMutatorFunc can supply an alternate outgoing request.
+type RequestMutatorFunc func(incoming *http.Request, outgoing *http.Request) *http.Request
 
 // Proxy provides websocket transport upgrade to compatible endpoints.
 type Proxy struct {
@@ -153,7 +153,7 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if p.requestMutator != nil {
-		p.requestMutator(r, request)
+		request = p.requestMutator(r, request)
 	}
 
 	responseBodyR, responseBodyW := io.Pipe()
