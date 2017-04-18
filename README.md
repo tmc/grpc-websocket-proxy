@@ -24,14 +24,6 @@ Usage:
 Package wsproxy implements a websocket proxy for grpc-gateway backed services
 
 ## Usage
-
-```go
-var (
-	MethodOverrideParam = "method"
-	TokenCookieName     = "token"
-)
-```
-
 #### func  WebsocketProxy
 
 ```go
