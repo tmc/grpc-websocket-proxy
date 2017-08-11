@@ -60,7 +60,7 @@ func WithMethodParamOverride(param string) Option {
 // WithTokenCookieName allows specification of the cookie that is supplied as an upstream 'Authorization: Bearer' http header.
 func WithTokenCookieName(param string) Option {
 	return func(p *Proxy) {
-		p.methodOverrideParam = param
+		p.tokenCookieName = param
 	}
 }
 
