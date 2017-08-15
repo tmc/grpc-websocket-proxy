@@ -60,7 +60,7 @@ func WithMethodParamOverride(param string) Option {
 // WithTokenCookieName allows specification of the cookie that is supplied as an upstream 'Authorization: Bearer' http header.
 func WithTokenCookieName(param string) Option {
 	return func(p *Proxy) {
-		p.methodOverrideParam = param
+		p.tokenCookieName = param
 	}
 }
 
@@ -159,14 +159,15 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseBodyR, responseBodyW := io.Pipe()
+	response := newInMemoryResponseWriter(responseBodyW)
 	go func() {
 		<-ctx.Done()
 		p.logger.Debugln("closing pipes")
 		requestBodyW.CloseWithError(io.EOF)
 		responseBodyW.CloseWithError(io.EOF)
+		response.closed <- true
 	}()
 
-	response := newInMemoryResponseWriter(responseBodyW)
 	go func() {
 		defer cancelFn()
 		p.h.ServeHTTP(response, request)
@@ -227,12 +228,14 @@ type inMemoryResponseWriter struct {
 	io.Writer
 	header http.Header
 	code   int
+	closed chan bool
 }
 
 func newInMemoryResponseWriter(w io.Writer) *inMemoryResponseWriter {
 	return &inMemoryResponseWriter{
 		Writer: w,
 		header: http.Header{},
+		closed: make(chan bool, 1),
 	}
 }
 
@@ -244,5 +247,8 @@ func (w *inMemoryResponseWriter) Header() http.Header {
 }
 func (w *inMemoryResponseWriter) WriteHeader(code int) {
 	w.code = code
+}
+func (w *inMemoryResponseWriter) CloseNotify() <-chan bool {
+	return w.closed
 }
 func (w *inMemoryResponseWriter) Flush() {}
