@@ -31,6 +31,7 @@ type Proxy struct {
 	methodOverrideParam string
 	tokenCookieName     string
 	requestMutator      RequestMutatorFunc
+	upgrader            *websocket.Upgrader
 }
 
 // Logger collects log messages.
@@ -78,6 +79,13 @@ func WithLogger(logger Logger) Option {
 	}
 }
 
+// WithUpgrader allows a custom websocket upgrader to be supplied
+func WithUpgrader(upgrader *websocket.Upgrader) Option {
+	return func(p *Proxy) {
+		p.upgrader = upgrader
+	}
+}
+
 // WebsocketProxy attempts to expose the underlying handler as a bidi websocket stream with newline-delimited
 // JSON as the content encoding.
 //
@@ -96,6 +104,7 @@ func WebsocketProxy(h http.Handler, opts ...Option) http.Handler {
 		logger:              logrus.New(),
 		methodOverrideParam: MethodOverrideParam,
 		tokenCookieName:     TokenCookieName,
+		upgrader:            &defaultUpgrader,
 	}
 	for _, o := range opts {
 		o(p)
@@ -103,8 +112,7 @@ func WebsocketProxy(h http.Handler, opts ...Option) http.Handler {
 	return p
 }
 
-// TODO(tmc): allow modification of upgrader settings?
-var upgrader = websocket.Upgrader{
+var defaultUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin:     func(r *http.Request) bool { return true },
@@ -127,7 +135,7 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 			"Sec-WebSocket-Protocol": []string{"Bearer"},
 		}
 	}
-	conn, err := upgrader.Upgrade(w, r, responseHeader)
+	conn, err := p.upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
 		p.logger.Warnln("error upgrading websocket:", err)
 		return
