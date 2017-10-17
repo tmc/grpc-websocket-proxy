@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/golang/protobuf/jsonpb"
+	log "github.com/sirupsen/logrus"
 	"github.com/tmc/grpc-websocket-proxy/examples/cmd/wsechoserver/echoserver"
 )
 
