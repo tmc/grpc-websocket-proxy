@@ -2,6 +2,7 @@ package wsproxy
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -164,7 +165,7 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if swsp := r.Header.Get("Sec-WebSocket-Protocol"); swsp != "" {
-		request.Header.Set("Authorization", strings.Replace(swsp, "Bearer, ", "Bearer ", 1))
+		request.Header.Set("Authorization", transformSubProtocolHeader(swsp))
 	}
 	for header := range r.Header {
 		if p.headerForwarder(header) {
@@ -262,6 +263,17 @@ func newInMemoryResponseWriter(w io.Writer) *inMemoryResponseWriter {
 		header: http.Header{},
 		closed: make(chan bool, 1),
 	}
+}
+
+// IE and Edge do not delimit Sec-WebSocket-Protocol strings with spaces
+func transformSubProtocolHeader(header string) string {
+	tokens := strings.SplitN(header, "Bearer,", 2)
+
+	if len(tokens) < 2 {
+		return ""
+	}
+
+	return fmt.Sprintf("Bearer %v", strings.Trim(tokens[1], " "))
 }
 
 func (w *inMemoryResponseWriter) Write(b []byte) (int, error) {
