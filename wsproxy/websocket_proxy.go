@@ -27,12 +27,13 @@ type RequestMutatorFunc func(incoming *http.Request, outgoing *http.Request) *ht
 
 // Proxy provides websocket transport upgrade to compatible endpoints.
 type Proxy struct {
-	h                   http.Handler
-	logger              Logger
-	methodOverrideParam string
-	tokenCookieName     string
-	requestMutator      RequestMutatorFunc
-	headerForwarder     func(header string) bool
+	h                      http.Handler
+	logger                 Logger
+	maxRespBodyBufferBytes int
+	methodOverrideParam    string
+	tokenCookieName        string
+	requestMutator         RequestMutatorFunc
+	headerForwarder        func(header string) bool
 }
 
 // Logger collects log messages.
@@ -51,6 +52,15 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Option allows customization of the proxy.
 type Option func(*Proxy)
+
+// WithMaxRespBodyBufferSize allows specification of a custom size for the
+// buffer used while reading the response body. By default, the bufio.Scanner
+// used to read the response body sets the maximum token size to MaxScanTokenSize.
+func WithMaxRespBodyBufferSize(nBytes int) Option {
+	return func(p *Proxy) {
+		p.maxRespBodyBufferBytes = nBytes
+	}
+}
 
 // WithMethodParamOverride allows specification of the special http parameter that is used in the proxied streaming request.
 func WithMethodParamOverride(param string) Option {
@@ -234,6 +244,14 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	}()
 	// write loop -- take messages from response and write to websocket
 	scanner := bufio.NewScanner(responseBodyR)
+
+	// if maxRespBodyBufferSize has been specified, use custom buffer for scanner
+	var scannerBuf []byte
+	if p.maxRespBodyBufferBytes > 0 {
+		scannerBuf = make([]byte, 0, 64*1024)
+		scanner.Buffer(scannerBuf, p.maxRespBodyBufferBytes)
+	}
+
 	for scanner.Scan() {
 		if len(scanner.Bytes()) == 0 {
 			p.logger.Warnln("[write] empty scan", scanner.Err())
