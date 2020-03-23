@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
@@ -28,6 +29,9 @@ type RequestMutatorFunc func(incoming *http.Request, outgoing *http.Request) *ht
 // Proxy provides websocket transport upgrade to compatible endpoints.
 type Proxy struct {
 	h                      http.Handler
+	period                 time.Duration
+	pongWait               time.Duration
+	pingWait               time.Duration
 	logger                 Logger
 	maxRespBodyBufferBytes int
 	methodOverrideParam    string
@@ -94,6 +98,17 @@ func WithForwardedHeaders(fn func(header string) bool) Option {
 func WithLogger(logger Logger) Option {
 	return func(p *Proxy) {
 		p.logger = logger
+	}
+}
+
+// WithPingControl allows specification of ping pong control. The period
+// parameter specifies the period between pings. The allowed wait time
+// for a pong response is (period * 10) / 9.
+func WithPingControl(period time.Duration) Option {
+	return func(proxy *Proxy) {
+		proxy.period = period
+		proxy.pongWait = (period * 10) / 9
+		proxy.pingWait = proxy.pongWait / 6
 	}
 }
 
@@ -211,6 +226,10 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 
 	// read loop -- take messages from websocket and write to http request
 	go func() {
+		if p.period > 0 && p.pingWait > 0 && p.pongWait > 0 {
+			conn.SetReadDeadline(time.Now().Add(p.pongWait))
+			conn.SetPongHandler(func(string) error { conn.SetReadDeadline(time.Now().Add(p.pongWait)); return nil })
+		}
 		defer func() {
 			cancelFn()
 		}()
@@ -242,6 +261,25 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
+	// ping write loop
+	if p.period > 0 && p.pingWait > 0 && p.pongWait > 0 {
+		go func() {
+			ticker := time.NewTicker(p.period)
+			defer func() {
+				ticker.Stop()
+				conn.Close()
+			}()
+			for {
+				select {
+				case <-ticker.C:
+					conn.SetWriteDeadline(time.Now().Add(p.pingWait))
+					if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+						return
+					}
+				}
+			}
+		}()
+	}
 	// write loop -- take messages from response and write to websocket
 	scanner := bufio.NewScanner(responseBodyR)
 
