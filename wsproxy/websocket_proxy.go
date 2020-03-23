@@ -29,15 +29,15 @@ type RequestMutatorFunc func(incoming *http.Request, outgoing *http.Request) *ht
 // Proxy provides websocket transport upgrade to compatible endpoints.
 type Proxy struct {
 	h                      http.Handler
-	period                 time.Duration
-	pongWait               time.Duration
-	pingWait               time.Duration
 	logger                 Logger
 	maxRespBodyBufferBytes int
 	methodOverrideParam    string
 	tokenCookieName        string
 	requestMutator         RequestMutatorFunc
 	headerForwarder        func(header string) bool
+	pingPeriod             time.Duration
+	pingWait               time.Duration
+	pongWait               time.Duration
 }
 
 // Logger collects log messages.
@@ -101,12 +101,12 @@ func WithLogger(logger Logger) Option {
 	}
 }
 
-// WithPingControl allows specification of ping pong control. The period
-// parameter specifies the period between pings. The allowed wait time
-// for a pong response is (period * 10) / 9.
+// WithPingControl allows specification of ping pong control. The pingPeriod
+// parameter specifies the pingPeriod between pings. The allowed wait time
+// for a pong response is (pingPeriod * 10) / 9.
 func WithPingControl(period time.Duration) Option {
 	return func(proxy *Proxy) {
-		proxy.period = period
+		proxy.pingPeriod = period
 		proxy.pongWait = (period * 10) / 9
 		proxy.pingWait = proxy.pongWait / 6
 	}
@@ -226,7 +226,7 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 
 	// read loop -- take messages from websocket and write to http request
 	go func() {
-		if p.period > 0 && p.pingWait > 0 && p.pongWait > 0 {
+		if p.pingPeriod > 0 && p.pingWait > 0 && p.pongWait > 0 {
 			conn.SetReadDeadline(time.Now().Add(p.pongWait))
 			conn.SetPongHandler(func(string) error { conn.SetReadDeadline(time.Now().Add(p.pongWait)); return nil })
 		}
@@ -262,9 +262,9 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	// ping write loop
-	if p.period > 0 && p.pingWait > 0 && p.pongWait > 0 {
+	if p.pingPeriod > 0 && p.pingWait > 0 && p.pongWait > 0 {
 		go func() {
-			ticker := time.NewTicker(p.period)
+			ticker := time.NewTicker(p.pingPeriod)
 			defer func() {
 				ticker.Stop()
 				conn.Close()
