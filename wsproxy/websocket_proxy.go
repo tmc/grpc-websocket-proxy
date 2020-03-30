@@ -271,6 +271,9 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 			}()
 			for {
 				select {
+				case <-ctx.Done():
+					p.logger.Debugln("ping loop done")
+					return
 				case <-ticker.C:
 					conn.SetWriteDeadline(time.Now().Add(p.pingWait))
 					if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
