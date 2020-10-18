@@ -2,6 +2,8 @@ package wsproxy
 
 import (
 	"bufio"
+	"reflect"
+	"unsafe"
 	"fmt"
 	"io"
 	"net/http"
@@ -285,6 +287,13 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	}
 	// write loop -- take messages from response and write to websocket
 	scanner := bufio.NewScanner(responseBodyR)
+	// Golang bufio.Scanner has hardcoded maxTokenSize = 64 KB
+	pointerVal := reflect.ValueOf(scanner)
+	val := reflect.Indirect(pointerVal)
+	member := val.FieldByName("maxTokenSize")
+	ptrToField := unsafe.Pointer(member.UnsafeAddr())
+	realPtrToField := (*int)(ptrToField)
+	*realPtrToField = 0x7fffffff
 
 	// if maxRespBodyBufferSize has been specified, use custom buffer for scanner
 	var scannerBuf []byte
