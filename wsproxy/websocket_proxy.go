@@ -117,6 +117,8 @@ var defaultHeadersToForward = map[string]bool{
 	"origin":  true,
 	"Referer": true,
 	"referer": true,
+	"Cookie": true,
+	"cookie": true,
 }
 
 func defaultHeaderForwarder(header string) bool {
