@@ -294,6 +294,9 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for scanner.Scan() {
+		if p.pingWait > 0 {
+			conn.SetWriteDeadline(time.Now().Add(p.pingWait))
+		}
 		if len(scanner.Bytes()) == 0 {
 			p.logger.Warnln("[write] empty scan", scanner.Err())
 			continue
