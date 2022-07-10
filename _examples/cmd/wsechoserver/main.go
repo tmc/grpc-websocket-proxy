@@ -11,7 +11,7 @@ import (
 	_ "golang.org/x/net/trace"
 
 	"github.com/golang/glog"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/tmc/grpc-websocket-proxy/examples/cmd/wsechoserver/echoserver"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 	"golang.org/x/net/context"

@@ -1,0 +1,29 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/tmc/grpc-websocket-proxy/examples/cmd/wsechoserver/echoserver
+    except:
+      - buf.build/googleapis/googleapis
+      - buf.build/grpc-ecosystem/grpc-gateway
+      - buf.build/percona/third_party
+
+plugins:
+  - name: go
+    path: protoc-gen-go
+    out: .
+    opt:
+      - paths=source_relative
+
+  - name: go-grpc
+    path: protoc-gen-go-grpc
+    out: .
+    opt:
+      - paths=source_relative
+
+  - name: grpc-gateway
+    path: protoc-gen-grpc-gateway
+    out: .
+    opt:
+      - paths=source_relative
+      - logtostderr=true
