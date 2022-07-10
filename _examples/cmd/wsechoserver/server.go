@@ -10,7 +10,9 @@ import (
 	"github.com/tmc/grpc-websocket-proxy/examples/cmd/wsechoserver/echoserver"
 )
 
-type Server struct{}
+type Server struct{
+	echoserver.UnimplementedEchoServiceServer
+}
 
 func (s *Server) Stream(_ *echoserver.Empty, stream echoserver.EchoService_StreamServer) error {
 	start := time.Now()
