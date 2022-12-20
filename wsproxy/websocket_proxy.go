@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/shiguredo/websocket"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
