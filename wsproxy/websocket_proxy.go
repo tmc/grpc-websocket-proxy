@@ -130,9 +130,12 @@ func defaultHeaderForwarder(header string) bool {
 // The cookie name is specified by the TokenCookieName value.
 //
 // example:
-//   Sec-Websocket-Protocol: Bearer, foobar
+//
+//	Sec-Websocket-Protocol: Bearer, foobar
+//
 // is converted to:
-//   Authorization: Bearer foobar
+//
+//	Authorization: Bearer foobar
 //
 // Method can be overwritten with the MethodOverrideParam get parameter in the requested URL
 func WebsocketProxy(h http.Handler, opts ...Option) http.Handler {
@@ -226,10 +229,6 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 
 	// read loop -- take messages from websocket and write to http request
 	go func() {
-		if p.pingInterval > 0 && p.pingWait > 0 && p.pongWait > 0 {
-			conn.SetReadDeadline(time.Now().Add(p.pongWait))
-			conn.SetPongHandler(func(string) error { conn.SetReadDeadline(time.Now().Add(p.pongWait)); return nil })
-		}
 		defer func() {
 			cancelFn()
 		}()
@@ -275,8 +274,7 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 					p.logger.Debugln("ping loop done")
 					return
 				case <-ticker.C:
-					conn.SetWriteDeadline(time.Now().Add(p.pingWait))
-					if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+					if err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(p.pingWait)); err != nil {
 						return
 					}
 				}
