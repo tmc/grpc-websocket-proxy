@@ -184,9 +184,11 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	defer cancelFn()
 
 	requestBodyR, requestBodyW := io.Pipe()
+	defer requestBodyR.Close()
 	request, err := http.NewRequestWithContext(r.Context(), r.Method, r.URL.String(), requestBodyR)
 	if err != nil {
 		p.logger.Warnln("error preparing request:", err)
+		defer requestBodyW.Close()
 		return
 	}
 	if swsp := r.Header.Get("Sec-WebSocket-Protocol"); swsp != "" {
@@ -210,6 +212,7 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseBodyR, responseBodyW := io.Pipe()
+	defer responseBodyR.Close()
 	response := newInMemoryResponseWriter(responseBodyW)
 	go func() {
 		<-ctx.Done()
