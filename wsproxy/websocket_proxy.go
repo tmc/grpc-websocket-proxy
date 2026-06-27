@@ -31,6 +31,7 @@ type Proxy struct {
 	h                      http.Handler
 	logger                 Logger
 	maxRespBodyBufferBytes int
+	maxReadMessageBytes    int64
 	methodOverrideParam    string
 	tokenCookieName        string
 	requestMutator         RequestMutatorFunc
@@ -98,6 +99,16 @@ func WithForwardedHeaders(fn func(header string) bool) Option {
 func WithLogger(logger Logger) Option {
 	return func(p *Proxy) {
 		p.logger = logger
+	}
+}
+
+// WithMaxReadMessageSize sets the maximum size in bytes for an incoming
+// WebSocket message. If a client sends a message larger than this limit,
+// the connection is closed with a 1009 (message too big) status code.
+// When unset (0) the gorilla/websocket default of 32 MiB is used.
+func WithMaxReadMessageSize(nBytes int64) Option {
+	return func(p *Proxy) {
+		p.maxReadMessageBytes = nBytes
 	}
 }
 
@@ -179,6 +190,9 @@ func (p *Proxy) proxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
+	if p.maxReadMessageBytes > 0 {
+		conn.SetReadLimit(p.maxReadMessageBytes)
+	}
 
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
